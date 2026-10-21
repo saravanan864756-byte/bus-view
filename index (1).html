@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>SS View - Live Bus Map</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f8f9ff;
+      --surface: #ffffff;
+      --ink: #0b1c30;
+      --ink-2: #3f493f;
+      --muted: #565e74;
+      --muted-2: #6f7a6e;
+      --green: #00652c;
+      --green-2: #15803d;
+      --green-ink: #005323;
+      --green-soft: #d3ffd5;
+      --blue: #2865ed;
+      --blue-2: #004cca;
+      --blue-soft: #e5eeff;
+      --blue-tint: #eff4ff;
+      --amber: #fef3c7;
+      --amber-ink: #78350f;
+      --water: #bcd9f2;
+      --map: #eef2f6;
+      --road: #ffffff;
+      --road-edge: #cfd8e3;
+      box-sizing: border-box;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #dfe6f0;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; border: 0; background: none; padding: 0; color: inherit; }
+    .app {
+      position: relative;
+      width: 100%;
+      max-width: 390px;
+      min-height: 100vh;
+      margin: 0 auto;
+      background: var(--bg);
+      overflow-x: hidden;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: 72px;
+    }
+    @media (min-width: 600px) {
+      body { display: flex; justify-content: center; align-items: flex-start; }
+      .app { box-shadow: 0 0 40px rgba(11, 28, 48, 0.15); min-height: 100vh; }
+    }
+
+    /* ---------- Header ---------- */
+    .header {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(248, 249, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
+      padding: 8px 16px 6px;
+    }
+    .header-row { display: flex; justify-content: space-between; align-items: center; }
+    .brand { display: flex; align-items: center; gap: 6px; }
+    .brand-title { font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -0.5px; }
+    .badge-ai { background: var(--green); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.6px; padding: 2px 6px; border-radius: 999px; text-transform: uppercase; }
+    .brand-sub { font-size: 10px; font-weight: 700; color: var(--green); letter-spacing: 0.5px; margin-top: 2px; }
+    .header-actions { display: flex; align-items: center; gap: 4px; }
+    .lang-btn { background: var(--blue-soft); height: 44px; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+    .avatar { width: 32px; height: 32px; border-radius: 999px; background: var(--green); color: #fff; display: grid; place-items: center; }
+    .chips { display: flex; gap: 6px; overflow-x: auto; margin-top: 8px; padding-bottom: 2px; scrollbar-width: none; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { flex: 0 0 auto; height: 28px; padding: 0 10px; border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: 0.6px; display: inline-flex; align-items: center; gap: 6px; background: var(--blue-soft); color: var(--muted); white-space: nowrap; }
+    .chip.live { background: var(--green-soft); color: var(--green-ink); }
+    .chip.weather { background: var(--blue-tint); color: var(--ink-2); letter-spacing: 0; font-size: 11px; font-weight: 700; }
+    .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--green); display: inline-block; }
+
+    /* ---------- Map ---------- */
+    .map {
+      position: relative;
+      height: 580px;
+      background: var(--map);
+      overflow: hidden;
+    }
+    .map svg.basemap { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .float { position: absolute; }
+    .pill {
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .landmark { display: flex; align-items: center; gap: 6px; padding: 6px 10px 6px 6px; }
+    .landmark .ico { width: 24px; height: 24px; border-radius: 6px; background: var(--blue); display: grid; place-items: center; flex: 0 0 auto; }
+    .landmark small { display: block; font-size: 8px; font-weight: 400; color: var(--muted-2); font-family: "Noto Sans Tamil", "Latha", sans-serif; }
+    .label-tag { font-size: 9px; font-weight: 600; color: var(--muted); background: rgba(255, 255, 255, 0.85); padding: 2px 6px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .stop { display: flex; align-items: center; gap: 4px; }
+    .stop .ring { width: 16px; height: 16px; border-radius: 999px; background: #fff; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--green), 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .stop .ring::after { content: ""; width: 8px; height: 8px; border-radius: 999px; background: var(--green); }
+    .stop span { background: rgba(255,255,255,0.9); padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; }
+
+    .bus { position: absolute; display: flex; flex-direction: column; align-items: center; }
+    .bus-live {
+      height: 28px; border-radius: 999px; background: var(--green-2); color: #fff;
+      display: flex; align-items: center; gap: 6px; padding: 0 10px;
+      box-shadow: 0 0 0 2px #fff, 0 10px 15px -3px rgba(0,0,0,0.1);
+      font-size: 12px; font-weight: 800; font-family: "Plus Jakarta Sans", sans-serif;
+      animation: bob 2.4s ease-in-out infinite;
+    }
+    .bus-live .gps { color: #95f8a7; font-size: 10px; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+    .bus-live .gps i { width: 8px; height: 8px; border-radius: 999px; background: #95f8a7; display: inline-block; }
+    .bus-blue { height: 24px; border-radius: 999px; background: var(--blue); color: #fff; display: flex; align-items: center; gap: 6px; padding: 0 8px; box-shadow: 0 0 0 2px #fff; font-size: 11px; font-weight: 800; font-family: "Plus Jakarta Sans", sans-serif; }
+    .bus-blue small { font-family: "Inter", sans-serif; font-size: 9px; color: #dbe1ff; font-weight: 700; }
+    .bus-dark { height: 22px; border-radius: 999px; background: #334155; color: #fff; display: flex; align-items: center; gap: 4px; padding: 0 8px; font-size: 11px; font-weight: 700; font-family: "Plus Jakarta Sans", sans-serif; box-shadow: 0 0 0 1px rgba(255,255,255,0.5); }
+    .bus-dark small { font-family: "Inter", sans-serif; font-size: 9px; color: #cbd5e1; font-weight: 400; }
+    .sub-tag { margin-top: 4px; font-size: 9px; padding: 2px 6px; border-radius: 999px; background: var(--green-soft); color: var(--green-ink); font-weight: 700; }
+    .sub-tag.amber { background: var(--amber); color: var(--amber-ink); }
+    .sub-tag.scheduled { background: #dce9ff; color: var(--muted); border-radius: 4px; font-weight: 400; font-size: 8px; padding: 2px 4px; }
+    .you { display: flex; flex-direction: column; align-items: center; }
+    .you .ring-out { position: absolute; width: 56px; height: 56px; border-radius: 999px; background: rgba(0,76,202,0.15); left: 0; top: 0; animation: radar 2.4s ease-out infinite; }
+    .you .ring-mid { width: 32px; height: 32px; border-radius: 999px; background: rgba(0,76,202,0.25); display: grid; place-items: center; position: relative; }
+    .you .core { width: 16px; height: 16px; border-radius: 999px; background: var(--blue-2); border: 2px solid #fff; box-shadow: 0 0 8px rgba(0,76,202,0.8); }
+    .you-tag { margin-top: 4px; background: rgba(255,255,255,0.95); padding: 2px 8px; border-radius: 999px; font-size: 9px; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+    .you-tag i { width: 6px; height: 6px; border-radius: 999px; background: var(--blue-2); display: inline-block; }
+
+    .layers { right: 12px; top: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .btn-round { background: rgba(255,255,255,0.9); border-radius: 999px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .btn-view { display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; background: rgba(255,255,255,0.95); }
+    .btn-compass { width: 36px; height: 36px; display: grid; place-items: center; }
+    .layer-stack { background: rgba(255,255,255,0.9); border-radius: 12px; padding: 4px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); backdrop-filter: blur(6px); }
+    .layer-stack button { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; }
+    .layer-stack button.on { background: rgba(211,255,213,0.5); }
+    .zoom { background: rgba(255,255,255,0.9); border-radius: 12px; padding: 4px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); }
+    .zoom button { width: 36px; height: 32px; font-weight: 700; font-size: 18px; color: var(--ink); display: grid; place-items: center; border-radius: 8px; }
+    .zoom button.recenter { height: 36px; }
+
+    .telemetry {
+      left: 12px; right: 12px; bottom: 8px; padding: 6px 12px; border-radius: 8px;
+      background: rgba(255,255,255,0.9); display: flex; justify-content: space-between; align-items: center;
+      font-size: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); backdrop-filter: blur(6px);
+    }
+    .telemetry .l { display: flex; align-items: center; gap: 6px; font-weight: 500; color: var(--ink); }
+    .telemetry .r { color: var(--muted); }
+
+    /* ---------- Bottom sheet ---------- */
+    .sheet {
+      position: relative;
+      margin-top: -16px;
+      background: #fff;
+      border-radius: 24px 24px 0 0;
+      box-shadow: 0 -6px 12px rgba(11, 28, 48, 0.08);
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .handle { width: 48px; height: 6px; border-radius: 999px; background: #d3e4fe; margin: 0 auto; }
+    .search { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 16px; background: var(--blue-soft); box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+    .search input { flex: 1; border: 0; background: transparent; outline: none; color: var(--ink); font-size: 14px; min-width: 0; }
+    .search input::placeholder { color: var(--muted); }
+    .mic { width: 32px; height: 32px; border-radius: 999px; background: #dce9ff; display: grid; place-items: center; }
+    .quick { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+    .quick::-webkit-scrollbar { display: none; }
+    .quick button { flex: 0 0 auto; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--blue-soft); font-size: 10px; font-weight: 700; letter-spacing: 0.6px; color: var(--muted); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+    .quick button.on { background: #dce9ff; color: var(--ink); }
+
+    .card { background: var(--blue-tint); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+    .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .route-id { display: flex; gap: 10px; align-items: flex-start; }
+    .route-tile { background: var(--green-2); border-radius: 8px; padding: 5px 10px 6px; text-align: center; color: #fff; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+    .route-tile b { display: block; font-family: "Plus Jakarta Sans", sans-serif; font-weight: 800; font-size: 18px; letter-spacing: 0.7px; line-height: 1.25; }
+    .route-tile span { display: block; font-size: 9px; opacity: 0.9; letter-spacing: 0.45px; text-transform: uppercase; }
+    .route-title { font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700; font-size: 17px; line-height: 1.35; color: var(--ink); }
+    .meta { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.6px; margin-top: 2px; }
+    .meta .op { color: var(--green); }
+    .live-pill { background: var(--green-soft); color: var(--green-ink); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+
+    .metrics { background: #fff; border-radius: 12px; padding: 8px 12px; display: flex; gap: 10px; }
+    .metric { flex: 1; min-width: 0; }
+    .metric + .metric { padding-left: 8px; }
+    .metric .k { font-size: 10px; font-weight: 500; color: var(--muted); letter-spacing: 0.6px; }
+    .metric .v { font-family: "Plus Jakarta Sans", sans-serif; font-weight: 800; color: var(--green); font-size: 22px; letter-spacing: -0.4px; margin-top: 2px; }
+    .metric .v small { font-family: "Inter", sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.2px; margin-left: 4px; }
+    .metric .v.ink { color: var(--ink); font-size: 18px; }
+    .metric .sub { font-size: 11px; color: var(--ink-2); margin-top: 4px; }
+    .verified { color: var(--green); font-size: 10px; font-weight: 700; margin-top: 6px; }
+
+    .crowd { background: var(--blue-soft); border-radius: 12px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+    .crowd .l { display: flex; gap: 8px; align-items: center; }
+    .crowd .ic { width: 28px; height: 28px; border-radius: 999px; background: var(--green-soft); display: grid; place-items: center; }
+    .crowd b { font-size: 12px; letter-spacing: 0.2px; display: block; }
+    .crowd span { font-size: 11px; color: var(--muted); }
+    .crowd .cap { font-size: 10px; font-weight: 700; color: var(--green); letter-spacing: 0.6px; display: flex; align-items: center; gap: 4px; }
+
+    .actions { display: flex; gap: 8px; padding-top: 4px; }
+    .btn-primary { flex: 1; height: 48px; border-radius: 12px; background: var(--green); color: #fff; font-weight: 700; font-size: 14px; letter-spacing: 0.14px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); }
+    .btn-secondary { height: 48px; padding: 0 16px; border-radius: 12px; background: var(--blue-soft); font-weight: 600; font-size: 12px; letter-spacing: 0.24px; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+
+    /* ---------- Contact form ---------- */
+    .form-card { background: #fff; border-radius: 16px; padding: 16px; border: 1px solid #e5eeff; display: flex; flex-direction: column; gap: 12px; }
+    .form-card h2 { margin: 0; font-family: "Plus Jakarta Sans", sans-serif; font-weight: 700; font-size: 16px; color: var(--ink); }
+    .form-card p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 10px; font-weight: 700; letter-spacing: 0.6px; color: var(--muted); text-transform: uppercase; }
+    .field input { height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid #d3e4fe; background: var(--blue-soft); color: var(--ink); font-size: 14px; outline: none; }
+    .field input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(40,101,237,0.15); }
+    .btn-submit { height: 48px; border-radius: 12px; background: var(--blue); color: #fff; font-weight: 700; font-size: 14px; letter-spacing: 0.14px; }
+    .btn-submit:disabled { opacity: 0.6; cursor: wait; }
+    .form-status { font-size: 12px; font-weight: 600; min-height: 16px; }
+    .form-status.ok { color: var(--green); }
+    .form-status.err { color: #b42318; }
+
+    /* ---------- Bottom nav ---------- */
+    .nav {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: 0; width: 100%; max-width: 390px; height: 64px; z-index: 30;
+      background: rgba(248, 249, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .nav a {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-width: 56px; min-height: 44px; gap: 2px; text-decoration: none;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.6px; color: var(--ink-2);
+    }
+    .nav a.active { color: var(--green); }
+    .nav .ai-wrap { position: relative; }
+    .nav .ai-tag { position: absolute; top: -4px; right: -10px; background: var(--blue); color: #fff; font-size: 9px; font-weight: 700; padding: 0 4px; border-radius: 999px; box-shadow: 0 0 4px rgba(40,101,237,0.7); }
+
+    /* ---------- Motion ---------- */
+    @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    @keyframes radar { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(1.4); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+      <div class="header-row">
+        <div>
+          <div class="brand">
+            <svg width="18" height="21" viewBox="0 0 18 21" fill="none" aria-hidden="true"><rect x="2" y="1" width="14" height="14" rx="3" stroke="#00652c" stroke-width="2"/><path d="M2 9h14" stroke="#00652c" stroke-width="2"/><circle cx="5.5" cy="12.5" r="1.2" fill="#00652c"/><circle cx="12.5" cy="12.5" r="1.2" fill="#00652c"/><path d="M4 18l2-3M14 18l-2-3" stroke="#00652c" stroke-width="2" stroke-linecap="round"/></svg>
+            <span class="brand-title">SS View</span>
+            <span class="badge-ai">AI</span>
+          </div>
+          <div class="brand-sub">TNSTC • MTC</div>
+        </div>
+        <div class="header-actions">
+          <button class="lang-btn" type="button" aria-label="Switch language">
+            <svg width="15" height="14" viewBox="0 0 16 14" fill="none" aria-hidden="true"><path d="M1 2h8M5 1v1M3 2c0 3 2 5 4 6M7 2c-.5 2-2 4-4 5" stroke="#0b1c30" stroke-width="1.2" stroke-linecap="round"/><path d="M9 13l3-7 3 7M10 11h4" stroke="#0b1c30" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <span>தமிழ் / Eng</span>
+          </button>
+          <button class="avatar" type="button" aria-label="Account">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="#fff" aria-hidden="true"><circle cx="8" cy="5" r="3.2"/><path d="M1.5 15c.7-3.2 3.3-5 6.5-5s5.8 1.8 6.5 5z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="chips">
+        <span class="chip live"><span class="dot"></span>LIVE GPS</span>
+        <span class="chip">SCHEDULED</span>
+        <span class="chip">DEMO MODE</span>
+        <span class="chip weather">☀ 31°C • Chen…</span>
+      </div>
+    </header>
+
+    <!-- ===== Map viewport ===== -->
+    <section class="map" aria-label="Live transit map of Chennai">
+      <!-- Basemap: water, parks, road network (simplified vector) -->
+      <svg class="basemap" viewBox="0 0 390 580" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <!-- Bay of Bengal (right edge) -->
+        <path d="M300 0 L390 0 L390 580 L330 580 C 340 470, 310 380, 325 290 C 338 200, 300 120, 300 0 Z" fill="#dbeafe"/>
+        <!-- Cooum river -->
+        <path d="M-10 118 C 60 96, 120 140, 190 128 S 300 96, 400 112" fill="none" stroke="var(--water)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M-10 118 C 60 96, 120 140, 190 128 S 300 96, 400 112" fill="none" stroke="#e7f1fb" stroke-width="4" stroke-linecap="round"/>
+        <!-- Parks -->
+        <rect x="8" y="330" width="78" height="60" rx="10" fill="#dcfce7"/>
+        <rect x="200" y="112" width="50" height="60" rx="10" fill="#dcfce7"/>
+        <!-- Major arterial roads -->
+        <g fill="none" stroke="var(--road-edge)" stroke-width="7" stroke-linecap="round">
+          <path d="M30 -10 L110 140 L165 260 L235 400 L260 600"/>
+          <path d="M-10 230 L395 200"/>
+          <path d="M320 -10 L300 240 L270 480"/>
+          <path d="M-10 420 L400 390"/>
+        </g>
+        <g fill="none" stroke="var(--road)" stroke-width="4" stroke-linecap="round">
+          <path d="M30 -10 L110 140 L165 260 L235 400 L260 600"/>
+          <path d="M-10 230 L395 200"/>
+          <path d="M320 -10 L300 240 L270 480"/>
+          <path d="M-10 420 L400 390"/>
+        </g>
+        <!-- Secondary streets -->
+        <g fill="none" stroke="#e2e8f0" stroke-width="2">
+          <path d="M60 0 L90 300 L120 580"/>
+          <path d="M200 0 L210 200 L250 330"/>
+          <path d="M0 80 L390 150"/>
+          <path d="M0 330 L390 300"/>
+          <path d="M0 520 L390 500"/>
+        </g>
+        <!-- Live route (active trip, 21G corridor) -->
+        <path d="M78 170 C 110 200, 130 220, 155 240 S 200 290, 215 330 S 232 380, 238 410" fill="none" stroke="#15803d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+        <path d="M78 170 C 110 200, 130 220, 155 240 S 200 290, 215 330 S 232 380, 238 410" fill="none" stroke="#95f8a7" stroke-width="2" stroke-dasharray="4 6" stroke-linecap="round"/>
+        <!-- Labels -->
+        <text x="42" y="232" font-size="9" fill="#64748b" font-family="Inter, sans-serif" transform="rotate(-90 42 232)">EVR PERIYAR SALAI</text>
+      </svg>
+
+      <!-- Landmarks -->
+      <div class="float pill landmark" style="left:48px; top:40px;">
+        <span class="ico"><svg width="12" height="12" viewBox="0 0 12 12" fill="#fff" aria-hidden="true"><path d="M1 11V4l5-3 5 3v7H7V7H5v4z"/></svg></span>
+        <div>Chennai Central<small>புரட்சி தலைவர் சென்ட்ரல்</small></div>
+      </div>
+      <div class="float pill" style="left:8px; top:96px; padding:4px 6px; border-radius:4px; font-size:9px; font-weight:600; color:var(--muted); display:flex; gap:4px; align-items:center; background:rgba(255,255,255,0.8);">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1 11h10M2 11V5M10 11V5M6 2l4 3H2z" stroke="#565e74" stroke-width="1.1"/></svg>
+        Ripon Building
+      </div>
+      <div class="float pill" style="right:32px; bottom:112px; padding:6px 8px 6px 6px; display:flex; gap:6px; align-items:center;">
+        <span style="width:20px;height:20px;border-radius:999px;background:#fef3c7;display:grid;place-items:center;" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 12 12" fill="#78350f"><path d="M6 1l2 3h3l-2.5 2 1 3L6 7 2.5 9l1-3L1 4h3z"/></svg></span>
+        <div style="line-height:1.2;">Kapaleeshwarar Temple<small style="display:block;font-weight:400;color:var(--muted-2);font-family:'Noto Sans Tamil','Latha',sans-serif;font-size:8px;">கபாலீஸ்வரர் கோவில்</small></div>
+      </div>
+      <div class="float pill" style="right:48px; top:208px; padding:4px 8px; border-radius:999px; display:flex; gap:4px; align-items:center;">
+        <svg width="11" height="10" viewBox="0 0 12 11" fill="#3f493f" aria-hidden="true"><path d="M1 8c2-1 3 1 5 0s3-1 5 0v2c-2-1-3 1-5 0S3 9 1 10z"/></svg>
+        <span style="font-size:9px;font-weight:700;color:#3f493f;">Marina Promenade</span>
+      </div>
+
+      <!-- Bus stops -->
+      <div class="float stop" style="left:78px; top:160px;"><span class="ring"></span><span>Central Stand</span></div>
+      <div class="float stop" style="left:155px; top:232px;"><span class="ring"></span><span>Simpsons</span></div>
+      <div class="float stop" style="left:215px; top:278px;"><span class="ring"></span><span>LIC Mount Rd</span></div>
+      <div class="float stop" style="left:238px; top:400px;"><span class="ring"></span><span>DMS Stand</span></div>
+
+      <!-- Road labels -->
+      <div class="float" style="left:20px; top:206px; transform:rotate(-16deg); font-size:9px; font-weight:700; color:#334155; letter-spacing:0.25px;">ANNA SALAI (MOUNT ROAD)</div>
+      <div class="float" style="left:318px; top:420px; transform:rotate(86deg); font-size:9px; font-weight:600; color:#475569; white-space:nowrap;">KAMARAJAR SALAI (MARINA)</div>
+      <div class="float" style="left:236px; top:136px; font-size:8px; font-weight:700; color:#00652c;">Island Grounds</div>
+      <div class="float" style="left:59px; top:342px; font-size:8px; font-weight:600; color:#00652c;">Napier Park</div>
+
+      <!-- Bus: 21G (selected, live) -->
+      <div class="float bus" style="left:87px; top:120px;">
+        <div class="bus-live">21G
+          <span class="gps"><i></i>4m</span>
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="transform:rotate(145deg)"><path d="M5 0l4 9-4-2-4 2z" fill="#95f8a7"/></svg>
+        </div>
+        <div class="sub-tag">42% Seats</div>
+      </div>
+
+      <!-- Bus: 11H -->
+      <div class="float bus" style="left:160px; top:297px;">
+        <div class="bus-blue">11H <small>• 8m away</small></div>
+        <div class="sub-tag amber" style="margin-top:2px;">Standing Only</div>
+      </div>
+
+      <!-- Bus: A1 scheduled -->
+      <div class="float bus" style="left:18px; top:207px;">
+        <div class="bus-dark">A1 <small>• Est 14m</small></div>
+        <div class="sub-tag scheduled">SCHEDULED</div>
+      </div>
+
+      <!-- User location -->
+      <div class="float you" style="left:37px; top:95px; width:56px;">
+        <div class="ring-out"></div>
+        <div class="ring-mid"><div class="core"></div></div>
+        <div class="you-tag"><i></i>You: Park Town / Gate 2</div>
+      </div>
+
+      <!-- Weather pill -->
+      <div class="float pill" style="left:12px; top:12px; padding:6px 12px; border-radius:999px; display:flex; gap:6px; align-items:center; font-size:12px; font-weight:700; letter-spacing:0.24px; backdrop-filter:blur(6px);">
+        <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.5" fill="#ffd600"/><g stroke="#ffd600" stroke-width="1.5" stroke-linecap="round"><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M3 13l1.4-1.4M11.6 4.4L13 3"/></g></svg>
+        Chennai 31°C <span style="color:var(--muted-2);font-weight:400;">•</span>
+        <span style="font-size:10px;letter-spacing:0.6px;color:var(--ink-2);">Rain 10%</span>
+      </div>
+
+      <!-- Right-side controls -->
+      <div class="float layers">
+        <button class="btn-round btn-view" type="button">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1l6 3-6 3-6-3z" stroke="#0b1c30" stroke-width="1.2"/><path d="M1 8l6 3 6-3" stroke="#0b1c30" stroke-width="1.2"/></svg>
+          3D ISOMETRIC
+        </button>
+        <button class="btn-round btn-compass" type="button" aria-label="Compass">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" style="transform:rotate(-24deg)"><circle cx="9" cy="9" r="7.5" fill="none" stroke="#ba1a1a" stroke-width="1.4"/><path d="M9 3l2 6-2 6-2-6z" fill="#ba1a1a"/></svg>
+        </button>
+        <div class="layer-stack">
+          <button class="on" type="button" aria-label="Bus layer"><svg width="14" height="16" viewBox="0 0 14 16" fill="#00652c" aria-hidden="true"><rect x="1" y="1" width="12" height="11" rx="2"/><rect x="1" y="13" width="12" height="2" rx="1"/></svg></button>
+          <button type="button" aria-label="Metro layer"><svg width="12" height="17" viewBox="0 0 12 17" fill="none" stroke="#3f493f" stroke-width="1.4" aria-hidden="true"><path d="M2 16L6 4l4 12M3 9h6"/></svg></button>
+          <button type="button" aria-label="Traffic layer"><svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="#3f493f" stroke-width="1.4" aria-hidden="true"><path d="M2 15h13M4 15V6h9v9M6 6V3h5v3"/></svg></button>
+          <button type="button" aria-label="Crowd layer"><svg width="15" height="16" viewBox="0 0 15 16" fill="#3f493f" aria-hidden="true"><circle cx="7.5" cy="4" r="2.5"/><path d="M2 15c.5-3.5 2.5-5 5.5-5s5 1.5 5.5 5z"/></svg></button>
+        </div>
+        <div class="zoom">
+          <button type="button" aria-label="Zoom in">+</button>
+          <button type="button" aria-label="Zoom out">−</button>
+          <button class="recenter" type="button" aria-label="Recenter">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#0b1c30" stroke-width="1.4" aria-hidden="true"><circle cx="9" cy="9" r="5"/><path d="M9 1v3M9 14v3M1 9h3M14 9h3"/><circle cx="9" cy="9" r="1.5" fill="#0b1c30"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Telemetry micro bar -->
+      <div class="float telemetry">
+        <span class="l"><span class="dot"></span>MTC Real-Time Telemetry Feed Active</span>
+        <span class="r">Ping: 12s ago</span>
+      </div>
+    </section>
+
+    <!-- ===== Bottom sheet ===== -->
+    <main class="sheet">
+      <div class="handle" aria-hidden="true"></div>
+
+      <label class="search">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="5" stroke="#565e74" stroke-width="1.6"/><path d="M11 11l4 4" stroke="#565e74" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input type="text" value="Vandalur Zoo (வண்டலூர்)" aria-label="Search destination" />
+        <span class="mic" aria-hidden="true"><svg width="10" height="14" viewBox="0 0 10 14" fill="#2865ed"><rect x="3" y="0" width="4" height="9" rx="2"/><path d="M1 7a4 4 0 008 0" stroke="#2865ed" stroke-width="1.2" fill="none"/><path d="M5 11v3" stroke="#2865ed" stroke-width="1.2"/></svg></span>
+      </label>
+
+      <div class="quick">
+        <button type="button"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#0b1c30" stroke-width="1.2" aria-hidden="true"><path d="M2 3h6M6 1l2 2-2 2M8 7H2M4 5L2 7l2 2"/></svg>Central ⇄ T. Nagar</button>
+        <button type="button">Broadway ⇄ Tambaram</button>
+        <button type="button">Guindy ⇄ Airport</button>
+      </div>
+
+      <!-- Active live bus card -->
+      <article class="card">
+        <div class="card-head">
+          <div class="route-id">
+            <div class="route-tile"><b>21G</b><span>Deluxe</span></div>
+            <div>
+              <div class="route-title">Broadway ⇄<br />Vandalur Zoo</div>
+              <div class="meta"><span class="op">MTC</span><br />Chennai</div>
+              <div class="meta" style="margin-top:2px;">Bus: TN-01-N-9842</div>
+            </div>
+          </div>
+          <span class="live-pill"><span class="dot"></span>LIVE GPS</span>
+        </div>
+
+        <div class="metrics">
+          <div class="metric">
+            <div class="k">Boarding Arrival</div>
+            <div class="v">4<small>mins away</small></div>
+            <div class="sub">Next Stop: Simpsons (0.6 km)</div>
+          </div>
+          <div class="metric">
+            <div class="k">Verified Fare</div>
+            <div class="v ink">₹18<small style="color:var(--muted);font-weight:400;font-size:11px;">One-Way</small></div>
+            <div class="verified">✓ Vidiyal Payanam Free*</div>
+          </div>
+        </div>
+
+        <div class="crowd">
+          <div class="l">
+            <span class="ic"><svg width="12" height="12" viewBox="0 0 12 12" fill="#00652c" aria-hidden="true"><circle cx="6" cy="2.5" r="2"/><path d="M2 11c.4-2.6 1.8-4 4-4s3.6 1.4 4 4z"/></svg></span>
+            <div><b>Seats Available (Low Rush)</b><span>Estimated 18 vacant seats</span></div>
+          </div>
+          <span class="cap"><span class="dot" style="width:10px;height:10px;"></span>42% Cap</span>
+        </div>
+
+        <div class="actions">
+          <button class="btn-primary" type="button">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M1 7.5L14 1 9 14 7.5 8.5z" fill="#fff"/></svg>
+            Track Live Bus
+          </button>
+          <button class="btn-secondary" type="button">
+            <svg width="13" height="12" viewBox="0 0 13 12" fill="none" stroke="#0b1c30" stroke-width="1.4" aria-hidden="true"><path d="M1 2h2M5 2h7M1 6h2M5 6h7M1 10h2M5 10h7"/></svg>
+            24 Stops
+          </button>
+        </div>
+      </article>
+
+      <!-- ===== Contact form (3 fields only) ===== -->
+      <section class="form-card" aria-labelledby="formTitle">
+        <div>
+          <h2 id="formTitle">Get bus alerts</h2>
+          <p>Leave your details and we will keep you posted about your route.</p>
+        </div>
+        <form id="contactForm" novalidate>
+          <div class="field">
+            <label for="fieldName">Name</label>
+            <input id="fieldName" type="text" autocomplete="name" placeholder="Your full name" />
+          </div>
+          <div class="field" style="margin-top:12px;">
+            <label for="fieldEmail">Email</label>
+            <input id="fieldEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="field" style="margin-top:12px;">
+            <label for="fieldPhone">Phone</label>
+            <input id="fieldPhone" type="tel" autocomplete="tel" placeholder="+91 00000 00000" />
+          </div>
+          <button id="submitBtn" class="btn-submit" type="submit" style="width:100%; margin-top:14px;">Save my details</button>
+          <div id="formStatus" class="form-status" role="status" aria-live="polite" style="margin-top:10px;"></div>
+        </form>
+      </section>
+    </main>
+
+    <!-- ===== Bottom nav ===== -->
+    <nav class="nav" aria-label="Primary">
+      <a class="active" href="#" aria-current="page">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M1 3l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M6 1v12M11 3v12"/></svg>
+        Live Map
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="4" cy="4" r="2"/><circle cx="14" cy="14" r="2"/><path d="M4 6v4a4 4 0 004 4h4"/></svg>
+        Routes
+      </a>
+      <a href="#">
+        <span class="ai-wrap">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M11 2l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>
+          <span class="ai-tag">AI</span>
+        </span>
+        Assistant
+      </a>
+      <a href="#">
+        <svg width="13" height="17" viewBox="0 0 13 17" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M1 1h11v15l-5.5-4L1 16z"/></svg>
+        Saved
+      </a>
+      <a href="#">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="9" cy="9" r="2.5"/><path d="M9 1v2.5M9 14.5V17M1 9h2.5M14.5 9H17M3.3 3.3l1.8 1.8M12.9 12.9l1.8 1.8M3.3 14.7l1.8-1.8M12.9 5.1l1.8-1.8"/></svg>
+        Settings
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    // Deployed Google Apps Script web app URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhYVp3fIaHecQFQIyTPMcFb8BNuovXPv7xM9t_JZr4LHIrpV4sP-XjWETN4H4__znCiA/exec";
+
+    const form = document.getElementById("contactForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const statusEl = document.getElementById("formStatus");
+
+    function showSuccess() {
+      statusEl.className = "form-status ok";
+      statusEl.textContent = "Thanks! Your details have been saved.";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Save my details";
+      form.reset();
+    }
+
+    function showError() {
+      statusEl.className = "form-status err";
+      statusEl.textContent = "Something went wrong. Please try again.";
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Save my details";
+    }
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const name = document.getElementById("fieldName").value.trim();
+      const email = document.getElementById("fieldEmail").value.trim();
+      const phone = document.getElementById("fieldPhone").value.trim();
+
+      if (!name || !email || !phone) {
+        statusEl.className = "form-status err";
+        statusEl.textContent = "Please fill in name, email and phone.";
+        return;
+      }
+
+      const url = SCRIPT_URL + "?" + new URLSearchParams({ name: name, email: email, phone: phone });
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Saving...";
+      statusEl.className = "form-status";
+      statusEl.textContent = "";
+
+      fetch(url, { method: "GET", mode: "no-cors" })
+        .then(() => showSuccess())
+        .catch(() => showError());
+    });
+  </script>
+</body>
+</html>
