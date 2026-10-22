@@ -270,5 +270,197 @@
   init3D();
 })();
 </script>
+
+<script>
+(() => {
+  "use strict";
+
+  // DEMO LOGIN — change these values before testing.
+  // Client-side passwords are NOT secure for a public website.
+  const LOGIN_NAME = "Saravanan";
+  const LOGIN_PASSWORD = "1234";
+
+  const style = document.createElement("style");
+  style.textContent = `
+    #ssLoginGate {
+      position:fixed; inset:0; z-index:99999;
+      display:flex; align-items:center; justify-content:center;
+      padding:22px; background:linear-gradient(145deg,#071b30,#075b43);
+      font-family:Inter,Arial,sans-serif;
+    }
+    #ssLoginGate .login-card {
+      width:100%; max-width:360px; padding:28px;
+      background:white; border-radius:22px;
+      box-shadow:0 24px 70px #0005;
+    }
+    #ssLoginGate h1 {margin:0 0 8px;font-size:28px;color:#064e32}
+    #ssLoginGate p {color:#586779;font-size:13px;line-height:1.5}
+    #ssLoginGate label {display:block;margin-top:15px;font-size:12px;font-weight:700}
+    #ssLoginGate input {
+      display:block;width:100%;height:46px;margin-top:6px;
+      padding:0 12px;border:1px solid #cbd5e1;border-radius:10px;
+      font:inherit;box-sizing:border-box;
+    }
+    #ssLoginGate button,#ssGpsButton {
+      min-height:44px;padding:10px 14px;border-radius:10px;
+      background:#00652c;color:white;font-weight:700;
+    }
+    #ssLoginGate button {width:100%;margin-top:20px}
+    #ssLoginError {color:#b42318;min-height:18px;font-size:12px;margin-top:10px}
+    #ssGpsButton {position:absolute;left:12px;top:55px;z-index:8;
+      box-shadow:0 3px 10px #0002;font-size:11px}
+    #ssGpsInfo {
+      position:absolute;left:12px;right:60px;top:108px;z-index:8;
+      padding:8px;background:#fff;border-radius:9px;
+      font-size:10px;line-height:1.5;overflow-wrap:anywhere;
+      box-shadow:0 2px 8px #0002;display:none;
+    }
+    #ssGpsMarker {
+      position:absolute;left:50%;top:50%;z-index:7;
+      transform:translate(-50%,-50%);display:none;
+      text-align:center;pointer-events:none;
+    }
+    #ssGpsMarker .ssGpsDot {
+      width:20px;height:20px;background:#1769ff;border:4px solid white;
+      border-radius:50%;box-shadow:0 0 0 8px #1769ff30;margin:auto;
+    }
+    #ssGpsMarker span {
+      display:block;margin-top:8px;background:white;padding:5px 8px;
+      border-radius:7px;font-size:10px;font-weight:700;white-space:nowrap;
+    }
+  `;
+  document.head.appendChild(style);
+
+  const app = document.querySelector(".app");
+  if (!app) return;
+  app.style.visibility = "hidden";
+
+  const gate = document.createElement("div");
+  gate.id = "ssLoginGate";
+  gate.innerHTML = `
+    <form class="login-card" id="ssLoginForm">
+      <h1>SS View 🚌</h1>
+      <p>Welcome! Login to open the bus demo.</p>
+      <label for="ssLoginName">Your name</label>
+      <input id="ssLoginName" autocomplete="username"
+        placeholder="Enter your name" required>
+      <label for="ssLoginPassword">Password</label>
+      <input id="ssLoginPassword" type="password"
+        autocomplete="current-password" placeholder="Enter password" required>
+      <button type="submit">Login & Open Map</button>
+      <div id="ssLoginError" role="alert"></div>
+      <p>Demo login only. Do not use a real or reused password here.</p>
+    </form>
+  `;
+  document.body.appendChild(gate);
+
+  function openApp() {
+    gate.remove();
+    app.style.visibility = "visible";
+    const avatar = document.querySelector(".avatar");
+    if (avatar) {
+      avatar.textContent = "S";
+      avatar.title = "Logged in: " + LOGIN_NAME;
+    }
+  }
+
+  // Keep the demo session only for this browser tab.
+  document.querySelector("#ssLoginForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const name = document.querySelector("#ssLoginName").value.trim();
+    const password = document.querySelector("#ssLoginPassword").value;
+    if (name.toLowerCase() === LOGIN_NAME.toLowerCase() &&
+        password === LOGIN_PASSWORD) {
+      openApp();
+    } else {
+      document.querySelector("#ssLoginError").textContent =
+        "Name or password is incorrect. Try again.";
+    }
+  });
+
+  // Add a GPS button to the existing illustrative map.
+  const map = document.querySelector("#map");
+  if (!map) return;
+
+  const gpsButton = document.createElement("button");
+  gpsButton.id = "ssGpsButton";
+  gpsButton.type = "button";
+  gpsButton.textContent = "◎ Find My Location";
+  gpsButton.setAttribute("aria-label", "Find my GPS location");
+  map.appendChild(gpsButton);
+
+  const gpsInfo = document.createElement("div");
+  gpsInfo.id = "ssGpsInfo";
+  gpsInfo.setAttribute("role", "status");
+  map.appendChild(gpsInfo);
+
+  const marker = document.createElement("div");
+  marker.id = "ssGpsMarker";
+  marker.innerHTML =
+    '<div class="ssGpsDot"></div><span>Your GPS · Not to scale</span>';
+  map.appendChild(marker);
+
+  gpsButton.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      gpsInfo.style.display = "block";
+      gpsInfo.textContent = "This browser does not support GPS location.";
+      return;
+    }
+
+    gpsButton.disabled = true;
+    gpsButton.textContent = "Finding location…";
+    gpsInfo.style.display = "block";
+    gpsInfo.textContent =
+      "Allow location access in your browser when prompted.";
+
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        gpsInfo.innerHTML = "";
+        const title = document.createElement("strong");
+        title.textContent = "Your GPS location";
+        const coords = document.createElement("div");
+        coords.textContent =
+          "Latitude: " + lat.toFixed(6) +
+          " · Longitude: " + lon.toFixed(6);
+        const link = document.createElement("a");
+        link.href = "https://www.google.com/maps?q=" +
+          encodeURIComponent(lat + "," + lon);
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "Open your location in Google Maps";
+        link.style.display = "inline-block";
+        link.style.marginTop = "5px";
+
+        gpsInfo.append(title, coords, link);
+        marker.style.display = "block";
+        gpsButton.textContent = "✓ Location found";
+        gpsButton.disabled = false;
+
+        const status = document.querySelector("#mapStatus");
+        if (status) status.textContent = "GPS permission granted";
+      },
+      error => {
+        const messages = {
+          1: "Location permission denied. Allow it in browser settings.",
+          2: "Your location is currently unavailable. Try again outdoors.",
+          3: "GPS request timed out. Please try again."
+        };
+        gpsInfo.textContent =
+          messages[error.code] || "Could not get your location.";
+        gpsButton.textContent = "◎ Try GPS again";
+        gpsButton.disabled = false;
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+    );
+  });
+
+  // This example app's background is a demo scene, not a real street map.
+  // The marker is therefore illustrative; Google Maps opens the real coordinates.
+})();
+</script>
 </body>
 </html>
+
