@@ -1,466 +1,198 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SS View - Live Bus Map</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#f8f9ff;--surface:#fff;--ink:#0b1c30;--ink-2:#3f493f;--muted:#565e74;--muted-2:#6f7a6e;--green:#00652c;--green-2:#15803d;--green-ink:#005323;--green-soft:#d3ffd5;--blue:#2865ed;--blue-2:#004cca;--blue-soft:#e5eeff;--blue-tint:#eff4ff;--amber:#fef3c7;--amber-ink:#78350f;--map:#eef2f6;box-sizing:border-box}
-*,*::before,*::after{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,sans-serif;background:#dfe6f0;color:var(--ink);-webkit-font-smoothing:antialiased}button,input{font:inherit}button{cursor:pointer;border:0;background:none;padding:0;color:inherit}.app{position:relative;width:100%;max-width:390px;min-height:100vh;margin:0 auto;background:var(--bg);overflow:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:72px}@media(min-width:600px){body{display:flex;justify-content:center;align-items:flex-start}.app{box-shadow:0 0 40px #0b1c3026;min-height:100vh}}
-.header{position:sticky;top:0;z-index:20;background:#f8f9ffeb;backdrop-filter:blur(12px);box-shadow:0 1px 8px #0000000a;padding:8px 16px 6px}.header-row{display:flex;justify-content:space-between;align-items:center}.brand{display:flex;align-items:center;gap:6px}.brand-title{font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:20px;letter-spacing:-.5px}.badge-ai{background:var(--green);color:#fff;font-size:10px;font-weight:700;letter-spacing:.6px;padding:2px 6px;border-radius:999px}.brand-sub{font-size:10px;font-weight:700;color:var(--green);letter-spacing:.5px;margin-top:2px}.header-actions{display:flex;align-items:center;gap:4px}.lang-btn{background:var(--blue-soft);min-height:40px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:600}.avatar{width:32px;height:32px;border-radius:999px;background:var(--green);color:#fff;display:grid;place-items:center}.chips{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding-bottom:2px;scrollbar-width:none}.chips::-webkit-scrollbar,.quick::-webkit-scrollbar{display:none}.chip{flex:0 0 auto;min-height:28px;padding:0 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.5px;display:inline-flex;align-items:center;gap:6px;background:var(--blue-soft);color:var(--muted);white-space:nowrap}.chip.live{background:var(--green-soft);color:var(--green-ink)}.chip.weather{background:var(--blue-tint);font-size:11px;letter-spacing:0}.dot{width:8px;height:8px;border-radius:999px;background:var(--green);display:inline-block}
-.map{position:relative;height:580px;background:var(--map);overflow:hidden;isolation:isolate}.map canvas{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}.map-fallback{position:absolute;inset:0;background:linear-gradient(150deg,#e9f1f6,#dbeafe 65%,#cde8f3);z-index:0}.map-fallback:before{content:"";position:absolute;left:-20%;top:18%;width:140%;height:10px;background:#bcd9f2;transform:rotate(-5deg);box-shadow:0 5px #e7f1fb}.map-label{position:absolute;z-index:2;pointer-events:none;font-size:9px;font-weight:700;color:#334155;text-shadow:0 1px #fff,1px 0 #fff}.float{position:absolute;z-index:3}.pill{background:#fffffff0;border-radius:8px;box-shadow:0 1px 3px #00000012;backdrop-filter:blur(3px);font-size:10px;font-weight:700;color:var(--ink);white-space:nowrap}.landmark{display:flex;align-items:center;gap:6px;padding:6px 10px 6px 6px}.landmark .ico{width:24px;height:24px;border-radius:6px;background:var(--blue);display:grid;place-items:center;flex:0 0 auto;color:white}.landmark small{display:block;font-size:8px;font-weight:400;color:var(--muted-2)}.stop{display:flex;align-items:center;gap:4px}.stop .ring{width:16px;height:16px;border-radius:999px;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 2px var(--green),0 4px 6px #0002}.stop .ring:after{content:"";width:8px;height:8px;border-radius:999px;background:var(--green)}.stop span:last-child{background:#fffffff0;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700}.bus{position:absolute;display:flex;flex-direction:column;align-items:center;z-index:4}.bus-live,.bus-blue,.bus-dark{height:28px;border-radius:999px;background:var(--green-2);color:#fff;display:flex;align-items:center;gap:6px;padding:0 10px;box-shadow:0 0 0 2px #fff,0 10px 15px #0002;font-size:12px;font-weight:800;font-family:"Plus Jakarta Sans",sans-serif;animation:bob 2.4s ease-in-out infinite}.bus-blue{height:24px;background:var(--blue);font-size:11px;padding:0 8px}.bus-dark{height:22px;background:#334155;font-size:11px;padding:0 8px}.bus small{font-family:Inter,sans-serif;font-size:9px;color:#dbe1ff}.sub-tag{margin-top:4px;font-size:9px;padding:2px 6px;border-radius:999px;background:var(--green-soft);color:var(--green-ink);font-weight:700}.sub-tag.amber{background:var(--amber);color:var(--amber-ink)}.you{display:flex;flex-direction:column;align-items:center}.you .ring-mid{width:32px;height:32px;border-radius:999px;background:#004cca40;display:grid;place-items:center}.you .core{width:16px;height:16px;border-radius:999px;background:var(--blue-2);border:2px solid #fff;box-shadow:0 0 8px #004cca99}.you-tag{margin-top:4px;background:#fffffff2;padding:2px 8px;border-radius:999px;font-size:9px;font-weight:700;white-space:nowrap}.layers{right:12px;top:12px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}.btn-round{background:#fffffff0;border-radius:999px;box-shadow:0 4px 6px #0002;backdrop-filter:blur(6px)}.btn-view{display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:10px;font-weight:700;letter-spacing:.4px}.btn-compass{width:36px;height:36px;display:grid;place-items:center}.layer-stack{background:#ffffffe8;border-radius:12px;padding:4px;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 6px #0002}.layer-stack button{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;font-size:16px}.layer-stack button.on{background:#d3ffd580;outline:1px solid #15803d}.zoom{background:#ffffffe8;border-radius:12px;padding:4px;display:flex;flex-direction:column;gap:4px;box-shadow:0 4px 6px #0002}.zoom button{width:36px;height:32px;font-weight:700;font-size:18px;display:grid;place-items:center;border-radius:8px}.zoom button.recenter{height:36px}.telemetry{left:12px;right:12px;bottom:8px;padding:8px 10px;border-radius:8px;background:#ffffffe8;display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:9px;box-shadow:0 1px 2px #0001;backdrop-filter:blur(6px)}.telemetry .l{display:flex;align-items:center;gap:6px;font-weight:600}.telemetry .r{color:var(--muted);text-align:right}
-.sheet{position:relative;margin-top:-16px;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -6px 12px #0b1c3014;padding:16px;display:flex;flex-direction:column;gap:12px;z-index:5}.handle{width:48px;height:6px;border-radius:999px;background:#d3e4fe;margin:0 auto}.search{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:16px;background:var(--blue-soft);box-shadow:inset 0 2px 4px #0000000d}.search input{flex:1;border:0;background:transparent;outline:none;color:var(--ink);font-size:13px;min-width:0}.search .search-btn{background:var(--green);color:#fff;border-radius:10px;padding:9px 10px;font-size:11px;font-weight:700;white-space:nowrap}.search-status{font-size:11px;color:var(--muted);margin-top:-6px;line-height:1.4}.quick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.quick button{flex:0 0 auto;min-height:28px;padding:0 10px;border-radius:999px;background:var(--blue-soft);font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap}.quick button.on{background:#dce9ff;color:var(--ink)}.results{display:flex;flex-direction:column;gap:8px}.result{width:100%;text-align:left;border:1px solid #dbe7fa;background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:space-between;gap:8px;align-items:center}.result b{display:block;font-size:13px}.result small{display:block;color:var(--muted);font-size:10px;margin-top:3px;line-height:1.4}.result .result-id{background:var(--green);color:#fff;border-radius:8px;padding:7px 9px;font-weight:800;white-space:nowrap}.card{background:var(--blue-tint);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 1px #0000000d}.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.route-id{display:flex;gap:10px;align-items:flex-start}.route-tile{background:var(--green-2);border-radius:8px;padding:5px 10px 6px;text-align:center;color:#fff}.route-tile b{display:block;font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:18px;line-height:1.25}.route-tile span{display:block;font-size:9px;text-transform:uppercase}.route-title{font-family:"Plus Jakarta Sans",sans-serif;font-weight:700;font-size:16px;line-height:1.35}.meta{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.4px;margin-top:3px}.meta .op{color:var(--green)}.live-pill{background:var(--green-soft);color:var(--green-ink);font-size:10px;font-weight:700;padding:5px 8px;border-radius:999px;display:flex;align-items:center;gap:4px;white-space:nowrap}.metrics{background:#fff;border-radius:12px;padding:8px 10px;display:flex;gap:10px}.metric{flex:1;min-width:0}.metric+.metric{padding-left:8px;border-left:1px solid #e5eaf2}.metric .k{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.3px}.metric .v{font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;color:var(--green);font-size:22px;margin-top:3px}.metric .v small{font-family:Inter,sans-serif;font-size:10px;font-weight:700;margin-left:3px}.metric .v.ink{color:var(--ink);font-size:18px}.metric .sub{font-size:10px;color:var(--ink-2);margin-top:4px;line-height:1.4}.verified{color:var(--green);font-size:10px;font-weight:700;margin-top:6px}.crowd{background:var(--blue-soft);border-radius:12px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}.crowd b{font-size:11px;display:block}.crowd span{font-size:10px;color:var(--muted)}.crowd .cap{font-size:10px;font-weight:700;color:var(--green);white-space:nowrap}.actions{display:flex;gap:8px;padding-top:4px}.btn-primary{flex:1;min-height:46px;border-radius:12px;background:var(--green);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;gap:8px;padding:8px}.btn-secondary{min-height:46px;padding:0 12px;border-radius:12px;background:var(--blue-soft);font-weight:600;font-size:11px;display:flex;align-items:center;gap:6px}
-.form-card{background:#fff;border-radius:16px;padding:16px;border:1px solid #e5eeff;display:flex;flex-direction:column;gap:12px}.form-card h2{margin:0;font-family:"Plus Jakarta Sans",sans-serif;font-size:16px}.form-card p{margin:0;font-size:12px;color:var(--muted);line-height:1.5}.field{display:flex;flex-direction:column;gap:4px}.field label{font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--muted);text-transform:uppercase}.field input{height:44px;padding:0 14px;border-radius:12px;border:1px solid #d3e4fe;background:var(--blue-soft);color:var(--ink);font-size:14px;outline:none;width:100%}.field input:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px #2865ed26}.btn-submit{height:48px;border-radius:12px;background:var(--blue);color:#fff;font-weight:700;font-size:14px}.btn-submit:disabled{opacity:.6;cursor:wait}.form-status{font-size:12px;font-weight:600;min-height:16px;line-height:1.5}.form-status.ok{color:var(--green)}.form-status.err{color:#b42318}.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:390px;min-height:64px;z-index:30;background:#f8f9ffef;backdrop-filter:blur(12px);box-shadow:0 -2px 12px #0000000f;display:flex;align-items:center;justify-content:space-between;padding:4px 10px env(safe-area-inset-bottom,0px)}.nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:48px;min-height:44px;gap:3px;font-size:9px;font-weight:700;color:var(--ink-2)}.nav button.active{color:var(--green)}.notice{background:#fff8e7;color:#78350f;border:1px solid #f5dfaa;border-radius:10px;padding:9px;font-size:10px;line-height:1.4}
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bus View | Chennai & Thiruvallur</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: #f0fdf4;
+      background: #052e16;
+    }
+
+    header {
+      padding: 22px 16px;
+      background: #14532d;
+      text-align: center;
+    }
+
+    h1 { margin: 0 0 8px; }
+    p { line-height: 1.6; }
+
+    main {
+      max-width: 700px;
+      margin: auto;
+      padding: 20px 14px;
+    }
+
+    .panel {
+      margin: 16px 0;
+      padding: 20px;
+      border: 1px solid #286444;
+      border-radius: 16px;
+      background: #0b3b22;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    select, input, button, .link-button {
+      width: 100%;
+      padding: 13px;
+      margin: 7px 0;
+      border: 0;
+      border-radius: 9px;
+      font-size: 16px;
+    }
+
+    select, input {
+      color: #10251a;
+      background: white;
+    }
+
+    button, .link-button {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      font-weight: bold;
+      color: #052e16;
+      background: #86efac;
+      cursor: pointer;
+    }
+
+    .secondary {
+      color: white;
+      background: #166534;
+      border: 1px solid #4ade80;
+    }
+
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      background: #123d27;
+      color: #bbf7d0;
+    }
+
+    small { color: #bbf7d0; }
+  </style>
 </head>
+
 <body>
-<div class="app">
-<header class="header">
-  <div class="header-row">
-    <div><div class="brand"><svg width="18" height="21" viewBox="0 0 18 21" fill="none" aria-hidden="true"><rect x="2" y="1" width="14" height="14" rx="3" stroke="#00652c" stroke-width="2"/><path d="M2 9h14" stroke="#00652c" stroke-width="2"/><circle cx="5.5" cy="12.5" r="1.2" fill="#00652c"/><circle cx="12.5" cy="12.5" r="1.2" fill="#00652c"/><path d="M4 18l2-3M14 18l-2-3" stroke="#00652c" stroke-width="2" stroke-linecap="round"/></svg><span class="brand-title">SS View</span><span class="badge-ai">AI</span></div><div class="brand-sub">TNSTC • MTC</div></div>
-    <div class="header-actions"><button class="lang-btn" id="languageBtn" type="button">தமிழ் / Eng</button><button class="avatar" type="button" aria-label="Account">●</button></div>
-  </div>
-  <div class="chips"><span class="chip live"><span class="dot"></span>DEMO GPS</span><span class="chip">SCHEDULED</span><span class="chip">DEMO MODE</span><span class="chip weather" id="weatherChip">☀ Chennai • Demo weather</span></div>
-</header>
+  <header>
+    <h1>🚌 BUS VIEW</h1>
+    <p>Chennai & Thiruvallur Bus Tracker</p>
+  </header>
 
-<section class="map" id="map" aria-label="Interactive demo transit map">
-  <div class="map-fallback" id="mapFallback"></div>
-  <canvas id="sceneCanvas" aria-label="3D demo map showing roads, trees, temple and demo buses"></canvas>
-  <div class="map-label" style="left:20px;top:218px;transform:rotate(-16deg)">ANNA SALAI (MOUNT ROAD)</div>
-  <div class="map-label" style="left:50px;top:305px;color:#247342">NAPier PARK</div>
-  <div class="float pill landmark" style="left:38px;top:42px"><span class="ico">⌂</span><div>Chennai Central<small>புரட்சி தலைவர் சென்ட்ரல்</small></div></div>
-  <div class="float pill" style="left:8px;top:96px;padding:5px 7px">Ripon Building</div>
-  <div class="float pill" style="right:28px;bottom:112px;padding:7px 8px">🛕 Kapaleeshwarar Temple</div>
-  <div class="float pill" style="right:48px;top:208px;padding:5px 8px;border-radius:999px">Marina Promenade</div>
-  <div class="float stop" style="left:72px;top:160px"><span class="ring"></span><span>Central Stand</span></div>
-  <div class="float stop" style="left:145px;top:232px"><span class="ring"></span><span>Simpsons</span></div>
-  <div class="float stop" style="left:205px;top:278px"><span class="ring"></span><span>LIC Mount Rd</span></div>
-  <div class="float stop" style="left:228px;top:400px"><span class="ring"></span><span>DMS Stand</span></div>
-  <div class="float bus" style="left:78px;top:120px"><div class="bus-live">21G <small style="color:#d1fae5">DEMO</small></div><div class="sub-tag">Simulated bus</div></div>
-  <div class="float bus" style="left:155px;top:297px"><div class="bus-blue">11H <small>DEMO</small></div><div class="sub-tag amber">Sample route</div></div>
-  <div class="float bus" style="left:18px;top:207px"><div class="bus-dark">A1 <small>DEMO</small></div><div class="sub-tag">Scheduled demo</div></div>
-  <div class="float you" style="left:35px;top:95px;width:56px"><div class="ring-mid"><div class="core"></div></div><div class="you-tag">Demo location</div></div>
-  <div class="float pill" style="left:12px;top:12px;padding:6px 10px;border-radius:999px;font-size:11px">☀ Chennai • weather demo</div>
-  <div class="float layers">
-    <button class="btn-round btn-view" id="toggle3d" type="button" aria-pressed="true">▱ 3D ISOMETRIC <span id="viewState">ON</span></button>
-    <button class="btn-round btn-compass" id="compassBtn" type="button" aria-label="Reset camera">🧭</button>
-    <div class="layer-stack" aria-label="Map layers">
-      <button class="on" data-layer="buses" aria-label="Toggle bus layer" title="Buses">🚌</button>
-      <button class="on" data-layer="metro" aria-label="Toggle metro layer" title="Metro">Ⓜ</button>
-      <button class="on" data-layer="traffic" aria-label="Toggle traffic layer" title="Traffic">🚦</button>
-      <button class="on" data-layer="trees" aria-label="Toggle trees" title="Trees">🌳</button>
-      <button class="on" data-layer="rain" aria-label="Toggle rain" title="Rain">🌧</button>
-    </div>
-    <div class="zoom"><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">−</button><button class="recenter" id="recenter" aria-label="Recenter map">◎</button></div>
-  </div>
-  <div class="float telemetry"><span class="l"><span class="dot"></span>SIMULATED MAP DATA</span><span class="r" id="mapStatus">3D demo scene ready</span></div>
-</section>
+  <main>
+    <section class="panel">
+      <h2>📍 Find Your Bus</h2>
 
-<main class="sheet">
-  <div class="handle" aria-hidden="true"></div>
-  <form class="search" id="busSearchForm" role="search">
-    <span aria-hidden="true">⌕</span><input id="busSearchInput" type="search" placeholder="Search bus number, stop or destination" aria-label="Search bus number, stop or destination" autocomplete="off"><button class="search-btn" type="submit">Search</button>
-  </form>
-  <div class="search-status" id="searchStatus" role="status" aria-live="polite">Search demo routes by bus number, start point, destination or stop.</div>
-  <div class="quick" id="quickRoutes"><button type="button" data-query="Central T Nagar">Central ⇄ T. Nagar</button><button type="button" data-query="Broadway Tambaram">Broadway ⇄ Tambaram</button><button type="button" data-query="Guindy Airport">Guindy ⇄ Airport</button></div>
-  <div class="results" id="searchResults" hidden></div>
-  <article class="card" id="busCard">
-    <div class="card-head"><div class="route-id"><div class="route-tile"><b id="routeNumber">21G</b><span>Demo</span></div><div><div class="route-title" id="routeTitle">Broadway ⇄<br>Vandalur Zoo</div><div class="meta"><span class="op">MTC-style demo route</span><br>Chennai • Sample data</div><div class="meta" id="busReg">Bus ID: DEMO-21G</div></div></div><span class="live-pill"><span class="dot"></span>DEMO</span></div>
-    <div class="metrics"><div class="metric"><div class="k">Sample arrival</div><div class="v" id="arrival">4<small>mins*</small></div><div class="sub" id="nextStop">Next stop: Simpsons</div></div><div class="metric"><div class="k">Sample fare</div><div class="v ink" id="fare">₹18<small>demo only</small></div><div class="verified">Not an official fare</div></div></div>
-    <div class="crowd"><div><b id="seatTitle">Sample seat estimate</b><span id="seatDetail">Illustrative data only — not live occupancy</span></div><span class="cap" id="capacity">42% demo</span></div>
-    <div class="notice">Demo mode: bus positions, arrival times, fares and seat estimates are illustrative. This page is not connected to official MTC/TNSTC GPS data.</div>
-    <div class="actions"><button class="btn-primary" id="trackBus" type="button">➤ Show demo bus</button><button class="btn-secondary" id="showStops" type="button">☷ Stops</button></div>
-  </article>
-  <section class="form-card" aria-labelledby="formTitle">
-    <div><h2 id="formTitle">Get bus alerts</h2><p>Enter your details to send an alert subscription request. This demo page cannot confirm that a Google Sheet saved it.</p></div>
-    <form id="contactForm" novalidate>
-      <div class="field"><label for="fieldName">Name</label><input id="fieldName" name="name" type="text" autocomplete="name" placeholder="Your full name" required></div>
-      <div class="field" style="margin-top:12px"><label for="fieldEmail">Email</label><input id="fieldEmail" name="email" type="email" autocomplete="email" placeholder="you@example.com" required></div>
-      <div class="field" style="margin-top:12px"><label for="fieldPhone">Phone</label><input id="fieldPhone" name="phone" type="tel" autocomplete="tel" placeholder="+91 00000 00000" required></div>
-      <button id="submitBtn" class="btn-submit" type="submit" style="width:100%;margin-top:14px">Send alert request</button>
-      <div id="formStatus" class="form-status" role="status" aria-live="polite" style="margin-top:10px"></div>
-    </form>
-  </section>
-</main>
-<nav class="nav" aria-label="Primary"><button class="active" data-nav="Live Map">▤<span>Live Map</span></button><button data-nav="Routes">⑂<span>Routes</span></button><button data-nav="Assistant">✧<span>Assistant</span></button><button data-nav="Saved">▣<span>Saved</span></button><button data-nav="Settings">⚙<span>Settings</span></button></nav>
-</div>
+      <label for="area">Select area</label>
+      <select id="area">
+        <option value="chennai">Chennai — MTC</option>
+        <option value="thiruvallur">Thiruvallur</option>
+      </select>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script>
-(() => {
-  "use strict";
-  const $ = (selector) => document.querySelector(selector);
-  const mapEl = $("#map"), canvas = $("#sceneCanvas"), fallback = $("#mapFallback");
-  const statusEl = $("#mapStatus");
-  const routes = [
-    {id:"21G",from:"Broadway",to:"Vandalur Zoo",stops:["Broadway","Central","Simpsons","Guindy","Tambaram","Vandalur Zoo"],arrival:4,fare:18,seat:"Sample seat estimate",capacity:"42% demo"},
-    {id:"11H",from:"Central",to:"T. Nagar",stops:["Central","Egmore","Nungambakkam","T. Nagar"],arrival:8,fare:15,seat:"Sample seat estimate",capacity:"Demo"},
-    {id:"A1",from:"Broadway",to:"Tambaram",stops:["Broadway","Guindy","Airport","Pallavaram","Tambaram"],arrival:14,fare:22,seat:"Scheduled sample",capacity:"Demo"},
-    {id:"5C",from:"Guindy",to:"Airport",stops:["Guindy","Alandur","Airport"],arrival:6,fare:12,seat:"Sample seat estimate",capacity:"Demo"},
-    {id:"M70",from:"Broadway",to:"Tambaram",stops:["Broadway","Saidapet","Guindy","Chromepet","Tambaram"],arrival:11,fare:20,seat:"Sample seat estimate",capacity:"Demo"}
-  ];
-  let selectedRoute = routes[0], scene, camera, renderer, root, rainPoints, rainVelocities=[], rainOn=true, is3d=true, zoom=1, animationId=0;
-  const layerState={buses:true,metro:true,traffic:true,trees:true,rain:true};
-  function showMapStatus(text){statusEl.textContent=text;}
-  function renderRoute(route){
-    selectedRoute=route;
-    $("#routeNumber").textContent=route.id;
-    $("#routeTitle").textContent=route.from+" ⇄ "+route.to;
-    $("#busReg").textContent="Bus ID: DEMO-"+route.id.replace(/[^a-z0-9]/gi,"");
-    $("#arrival").innerHTML=route.arrival+'<small>mins*</small>';
-    $("#nextStop").textContent="Stops: "+route.stops.slice(0,3).join(" → ")+(route.stops.length>3?"…":"");
-    $("#fare").innerHTML="₹"+route.fare+'<small>demo only</small>';
-    $("#seatTitle").textContent=route.seat;
-    $("#seatDetail").textContent="Illustrative data only — not live occupancy";
-    $("#capacity").textContent=route.capacity;
-    document.querySelectorAll(".bus").forEach(el=>el.style.display="none");
-    const busNames={"21G":0,"11H":1,"A1":2};
-    const chosenIndex=busNames[route.id];
-    if(chosenIndex!==undefined){const buses=document.querySelectorAll(".bus");if(buses[chosenIndex] && layerState.buses)buses[chosenIndex].style.display="flex";}
-    showMapStatus("Selected demo route "+route.id);
-  }
-  function searchRoutes(query){
-    const q=query.trim().toLowerCase();
-    const resultBox=$("#searchResults");
-    resultBox.replaceChildren();
-    if(!q){resultBox.hidden=true;$("#searchStatus").textContent="Type a bus number, stop or destination to search demo routes.";return;}
-    const matches=routes.filter(r=>(r.id+" "+r.from+" "+r.to+" "+r.stops.join(" ")).toLowerCase().includes(q));
-    if(!matches.length){
-      resultBox.hidden=false;
-      const msg=document.createElement("div");msg.className="notice";msg.textContent='No demo routes matched "'+query+'". Try 21G, Central, Guindy, Airport, Broadway or Tambaram.';resultBox.append(msg);
-      $("#searchStatus").textContent="No matches found.";return;
-    }
-    matches.forEach(route=>{
-      const button=document.createElement("button");button.type="button";button.className="result";
-      const left=document.createElement("span");const strong=document.createElement("b");strong.textContent=route.id+" · "+route.from+" ⇄ "+route.to;
-      const small=document.createElement("small");small.textContent=route.stops.join(" → ")+" · "+route.arrival+" min sample arrival";
-      left.append(strong,small);const id=document.createElement("span");id.className="result-id";id.textContent=route.id;
-      button.append(left,id);button.addEventListener("click",()=>{renderRoute(route);resultBox.hidden=true;$("#searchStatus").textContent="Selected "+route.id+" demo route. Values are illustrative, not live data.";$("#busCard").scrollIntoView({behavior:"smooth",block:"nearest"});});resultBox.append(button);
-    });
-    resultBox.hidden=false;$("#searchStatus").textContent=matches.length+" demo route(s) found. Select one to view sample details.";
-  }
-  $("#busSearchForm").addEventListener("submit",e=>{e.preventDefault();searchRoutes($("#busSearchInput").value);});
-  $("#busSearchInput").addEventListener("input",()=>{if($("#busSearchInput").value.trim())searchRoutes($("#busSearchInput").value);else{$("#searchResults").hidden=true;$("#searchStatus").textContent="Search demo routes by bus number, start point, destination or stop.";}});
-  $("#quickRoutes").addEventListener("click",e=>{const b=e.target.closest("button[data-query]");if(!b)return;$("#busSearchInput").value=b.dataset.query.split(" ")[0];searchRoutes(b.dataset.query.split(" ")[0]);});
-  $("#showStops").addEventListener("click",()=>{const resultBox=$("#searchResults");resultBox.replaceChildren();const list=document.createElement("div");list.className="notice";list.textContent=selectedRoute.id+" demo stops: "+selectedRoute.stops.join(" → ");resultBox.append(list);resultBox.hidden=false;$("#searchStatus").textContent="Sample stops only; verify with the official operator.";resultBox.scrollIntoView({behavior:"smooth",block:"nearest"});});
-  $("#trackBus").addEventListener("click",()=>{showMapStatus("Demo bus selected — no live GPS feed");$("#searchStatus").textContent="Showing illustrative route "+selectedRoute.id+". This is not a real-time vehicle location.";});
-  $("#toggle3d").addEventListener("click",()=>{is3d=!is3d;$("#viewState").textContent=is3d?"ON":"OFF";$("#toggle3d").setAttribute("aria-pressed",String(is3d));if(camera){camera.position.set(is3d?13:0, is3d?15:24, is3d?18:0.01);camera.lookAt(0,0,0);}showMapStatus(is3d?"3D isometric view":"Top-down map view");});
-  function resetCamera(){zoom=1;if(camera){camera.zoom=zoom;camera.updateProjectionMatrix();camera.position.set(is3d?13:0,is3d?15:24,is3d?18:0.01);camera.lookAt(0,0,0);}showMapStatus("Map recentered (demo scene)");}
-  $("#recenter").addEventListener("click",resetCamera);$("#compassBtn").addEventListener("click",resetCamera);
-  $("#zoomIn").addEventListener("click",()=>{if(camera){zoom=Math.min(2.2,zoom+.15);camera.zoom=zoom;camera.updateProjectionMatrix();showMapStatus("Zoom "+Math.round(zoom*100)+"%");}});
-  $("#zoomOut").addEventListener("click",()=>{if(camera){zoom=Math.max(.55,zoom-.15);camera.zoom=zoom;camera.updateProjectionMatrix();showMapStatus("Zoom "+Math.round(zoom*100)+"%");}});
-  document.querySelectorAll("[data-layer]").forEach(btn=>btn.addEventListener("click",()=>{
-    const key=btn.dataset.layer;layerState[key]=!layerState[key];btn.classList.toggle("on",layerState[key]);btn.setAttribute("aria-pressed",String(layerState[key]));
-    if(key==="rain"){rainOn=layerState.rain;if(rainPoints)rainPoints.visible=rainOn;}
-    if(root){root.traverse(obj=>{if(obj.userData.layer===key)obj.visible=layerState[key];});}
-    if(key==="buses")document.querySelectorAll(".bus").forEach(el=>el.style.display=layerState.buses?"flex":"none");
-    showMapStatus(key+" layer "+(layerState[key]?"on":"off"));
-  }));
-  document.querySelectorAll("[data-nav]").forEach(btn=>btn.addEventListener("click",()=>{
-    document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("active",b===btn));
-    const section=btn.dataset.nav;
-    if(section==="Routes"){$("#busSearchInput").focus();$("#searchStatus").textContent="Search available sample routes above.";}
-    else if(section==="Assistant")alert("SS View assistant is a placeholder in this demo. No AI service is connected.");
-    else if(section==="Saved")alert("Saved routes are not configured in this demo yet.");
-    else if(section==="Settings")alert("Demo settings: use the map layer buttons to toggle buses, trees and rain.");
-    else window.scrollTo({top:0,behavior:"smooth"});
-  }));
-  $("#languageBtn").addEventListener("click",()=>alert("Language switching is not configured yet. Tamil / English label is visual only."));
+      <label for="busNumber">Bus number / route</label>
+      <input id="busNumber"
+             placeholder="Enter bus number, e.g. 570">
 
-  function makeMaterial(color,roughness=.9){return new THREE.MeshStandardMaterial({color,roughness});}
-  function addBox(parent,w,h,d,x,y,z,color,layer="buildings"){
-    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),makeMaterial(color));mesh.position.set(x,y+h/2,z);mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.layer=layer;parent.add(mesh);return mesh;
-  }
-  function addTree(parent,x,z,scale=1){
-    const g=new THREE.Group();g.position.set(x,0,z);g.scale.setScalar(scale);g.userData.layer="trees";
-    const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.08,.12,.65,7),makeMaterial("#8b5a2b"));trunk.position.y=.32;g.add(trunk);
-    const crown=new THREE.Mesh(new THREE.ConeGeometry(.48,.9,7),makeMaterial("#2f855a"));crown.position.y=.95;g.add(crown);
-    const crown2=new THREE.Mesh(new THREE.ConeGeometry(.36,.7,7),makeMaterial("#38a169"));crown2.position.y=1.35;g.add(crown2);parent.add(g);
-  }
-  function addTemple(parent,x,z){
-    const g=new THREE.Group();g.position.set(x,0,z);g.userData.layer="buildings";
-    const base=new THREE.Mesh(new THREE.BoxGeometry(2.6,.35,2.1),makeMaterial("#d6a65f"));base.position.y=.18;g.add(base);
-    const hall=new THREE.Mesh(new THREE.BoxGeometry(1.7,1.2,1.45),makeMaterial("#e9c78a"));hall.position.y=.9;g.add(hall);
-    const roof=new THREE.Mesh(new THREE.ConeGeometry(1.35,1.15,4),makeMaterial("#b45336"));roof.position.y=2;roof.rotation.y=Math.PI/4;g.add(roof);
-    const tower=new THREE.Mesh(new THREE.ConeGeometry(.65,2.3,5),makeMaterial("#d97736"));tower.position.set(0,3.55,0);tower.rotation.y=Math.PI/4;g.add(tower);
-    for(let i=0;i<3;i++){const tier=new THREE.Mesh(new THREE.BoxGeometry(1.25-i*.25,.17,1.25-i*.25),makeMaterial(i%2?"#e9c78a":"#b45336"));tier.position.y=2.65+i*.45;g.add(tier);}
-    parent.add(g);
-  }
-  function addBus3D(parent,x,z,color,label){
-    const g=new THREE.Group();g.position.set(x,0,z);g.userData.layer="buses";
-    const body=new THREE.Mesh(new THREE.BoxGeometry(1.35,.55,.62),makeMaterial(color));body.position.y=.48;g.add(body);
-    const top=new THREE.Mesh(new THREE.BoxGeometry(.9,.34,.55),makeMaterial("#dbeafe"));top.position.set(-.05,.9,0);g.add(top);
-    [-.42,.42].forEach(wx=>[-.31,.31].forEach(wz=>{const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.08,10),makeMaterial("#253247"));wheel.rotation.z=Math.PI/2;wheel.position.set(wx,.18,wz);g.add(wheel);}));
-    g.userData.label=label;parent.add(g);
-  }
-  function init3D(){
-    if(!window.THREE){fallback.style.display="block";showMapStatus("3D library unavailable — showing fallback map");return;}
-    try{
-      scene=new THREE.Scene();scene.background=new THREE.Color("#eaf1f6");scene.fog=new THREE.Fog("#eaf1f6",24,55);
-      camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(13,15,18);camera.lookAt(0,0,0);
-      renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-      scene.add(new THREE.HemisphereLight("#ffffff","#8ca3b5",2));
-      const sun=new THREE.DirectionalLight("#fff3d1",2.3);sun.position.set(-8,16,10);sun.castShadow=true;scene.add(sun);
-      root=new THREE.Group();scene.add(root);
-      const ground=new THREE.Mesh(new THREE.PlaneGeometry(42,42),makeMaterial("#e7edf0"));ground.rotation.x=-Math.PI/2;ground.position.y=-.08;ground.receiveShadow=true;root.add(ground);
-      // Blue coastal water strip
-      const water=new THREE.Mesh(new THREE.PlaneGeometry(8,42),new THREE.MeshStandardMaterial({color:"#bcdff4",roughness:.35}));water.rotation.x=-Math.PI/2;water.position.set(15,.005,0);water.userData.layer="traffic";root.add(water);
-      // Road grid and white road markings
-      const roadMat=makeMaterial("#c5d0da"),asphalt=makeMaterial("#fafcff");
-      for(let i=-3;i<=3;i++){
-        const road1=new THREE.Mesh(new THREE.BoxGeometry(2.05,.04,38),asphalt);road1.position.set(i*5,.015,0);road1.receiveShadow=true;road1.userData.layer="traffic";root.add(road1);
-        const road2=new THREE.Mesh(new THREE.BoxGeometry(38,.04,1.7),asphalt);road2.position.set(0,.02,i*5);road2.receiveShadow=true;road2.userData.layer="traffic";root.add(road2);
-        const edge=new THREE.Mesh(new THREE.BoxGeometry(2.2,.05,38),roadMat);edge.position.set(i*5,.005,0);edge.userData.layer="traffic";root.add(edge);root.add(road1);
+      <button id="trackButton">Find Live Tracking</button>
+
+      <p id="status" class="status" aria-live="polite">
+        Select your area and enter a bus number.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>🗺️ Official Tracking</h2>
+      <p>
+        Open the official MTC tracker to check the live-tracking
+        options currently provided by the transport operator.
+      </p>
+
+      <a class="link-button"
+         href="https://commuter.mtcbusits.in/"
+         target="_blank" rel="noopener noreferrer">
+        Open MTC Live Tracker ↗
+      </a>
+
+      <a class="link-button secondary"
+         href="https://mtcbus.tn.gov.in/Home"
+         target="_blank" rel="noopener noreferrer">
+        MTC Official Website ↗
+      </a>
+    </section>
+
+    <section class="panel">
+      <h2>📚 Route & Schedule Data</h2>
+      <p>
+        CUMTA publishes Chennai transport route and stop datasets.
+        These are useful for building route search, but do not
+        themselves provide a live location for every bus.
+      </p>
+
+      <a class="link-button secondary"
+         href="https://opendata.cumta.org/"
+         target="_blank" rel="noopener noreferrer">
+        Open Chennai Transit Data ↗
+      </a>
+
+      <a class="link-button secondary"
+         href="https://www.tnstc.in/OTRSOnline/preKnowYourConductor.do"
+         target="_blank" rel="noopener noreferrer">
+        TNSTC Bus Details ↗
+      </a>
+    </section>
+
+    <p><small>
+      Live bus positions will appear inside Bus View only after
+      an authorized GPS data feed has been connected. This page
+      does not generate fake bus locations.
+    </small></p>
+
+    <button class="secondary"
+            onclick="location.href='index.html'">
+      ← Back to Bus View
+    </button>
+  </main>
+
+  <script>
+    document.getElementById("trackButton").addEventListener(
+      "click", function () {
+        const area = document.getElementById("area").value;
+        const bus = document.getElementById("busNumber")
+          .value.trim();
+        const status = document.getElementById("status");
+
+        if (!bus) {
+          status.textContent = "Please enter a bus number first.";
+          return;
+        }
+
+        if (area === "chennai") {
+          status.textContent =
+            "For bus " + bus +
+            ", check the official MTC tracker. Bus View is not yet " +
+            "connected to the operator's live GPS feed.";
+        } else {
+          status.textContent =
+            "For bus " + bus +
+            ", Thiruvallur live GPS data is not connected yet. " +
+            "We need an authorized operator feed to show its real location.";
+        }
       }
-      // Parks and low-rise city blocks
-      const park=new THREE.Mesh(new THREE.BoxGeometry(7,.08,5),makeMaterial("#c7e9c7"));park.position.set(-10,.02,7);park.userData.layer="trees";root.add(park);
-      for(let i=0;i<30;i++){const x=((i*7)%31)-15,z=((i*11)%31)-15;if(Math.abs(x%5)<1.3||Math.abs(z%5)<1.1)continue;if(x>8&&z>-4&&z<6)continue;addBox(root,1.1+(i%3)*.25,.6+(i%4)*.25,1.1,x,.03,z,["#d8e2e9","#cbd5e1","#e4d5c4","#d5e5df"][i%4]);}
-      // Green trees distributed around streets/park
-      for(let i=0;i<24;i++){const x=((i*13)%29)-14,z=((i*9)%29)-14;if(Math.abs(x%5)<1.4||Math.abs(z%5)<1.2)continue;addTree(root,x,z,.72+(i%4)*.12);}
-      addTemple(root,7,-6);
-      // Landmark buildings
-      addBox(root,2.1,1.9,1.8,-9,-.01,-8,"#e8d9bd");addBox(root,2.5,1.1,2.2,-9,1.9,-8,"#c9d3de");
-      // Route line
-      const points=[new THREE.Vector3(-12,.09,-10),new THREE.Vector3(-8,.09,-7),new THREE.Vector3(-4,.09,-4),new THREE.Vector3(0,.09,0),new THREE.Vector3(4,.09,3),new THREE.Vector3(6,.09,7)];
-      const curve=new THREE.CatmullRomCurve3(points);const routeLine=new THREE.Mesh(new THREE.TubeGeometry(curve,45,.07,6,false),new THREE.MeshStandardMaterial({color:"#15803d",emissive:"#0b5529",emissiveIntensity:.25}));routeLine.userData.layer="buses";root.add(routeLine);
-      addBus3D(root,-7,-6,"#15803d","21G");addBus3D(root,1,2,"#2865ed","11H");addBus3D(root,-11,1,"#334155","A1");
-      // Rain particle field, toggleable
-      const rainCount=420,positions=new Float32Array(rainCount*3);rainVelocities=[];
-      for(let i=0;i<rainCount;i++){positions[i*3]=(Math.random()-.5)*36;positions[i*3+1]=Math.random()*18+1;positions[i*3+2]=(Math.random()-.5)*36;rainVelocities.push(.08+Math.random()*.12);}
-      const rainGeo=new THREE.BufferGeometry();rainGeo.setAttribute("position",new THREE.BufferAttribute(positions,3));
-      rainPoints=new THREE.Points(rainGeo,new THREE.PointsMaterial({color:"#6aa6d9",size:.08,transparent:true,opacity:.8}));rainPoints.userData.layer="rain";rainPoints.visible=rainOn;scene.add(rainPoints);
-      fallback.style.display="none";resize();showMapStatus("3D demo scene ready");
-      const clock=new THREE.Clock();
-      function animate(){animationId=requestAnimationFrame(animate);const t=clock.getElapsedTime();if(root){root.rotation.y=Math.sin(t*.08)*.015;}
-        if(rainPoints&&rainPoints.visible){const attr=rainPoints.geometry.attributes.position;for(let i=0;i<rainCount;i++){let y=attr.array[i*3+1]-rainVelocities[i];if(y<0)y=18;attr.array[i*3+1]=y;}attr.needsUpdate=true;}
-        renderer.render(scene,camera);
-      }animate();
-    }catch(err){console.error("3D scene failed:",err);fallback.style.display="block";showMapStatus("3D could not start; fallback map shown");}
-  }
-  function resize(){if(!renderer||!camera)return;const w=Math.max(1,mapEl.clientWidth),h=Math.max(1,mapEl.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
-  window.addEventListener("resize",resize);
-  // Contact request: no false success. no-cors responses are opaque and cannot prove storage.
-  const SCRIPT_URL="https://script.google.com/macros/s/AKfycbxhYVp3fIaHecQFQIyTPMcFb8BNuovXPv7xM9t_JZr4LHIrpV4sP-XjWETN4H4__znCiA/exec";
-  $("#contactForm").addEventListener("submit",async e=>{
-    e.preventDefault();const status=$("#formStatus"),button=$("#submitBtn");
-    const name=$("#fieldName").value.trim(),email=$("#fieldEmail").value.trim(),phone=$("#fieldPhone").value.trim();
-    if(!name||!email||!phone){status.className="form-status err";status.textContent="Please fill in all fields.";return;}
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){status.className="form-status err";status.textContent="Please enter a valid email address.";return;}
-    button.disabled=true;button.textContent="Sending request…";status.className="form-status";status.textContent="Trying to send your request. Waiting for a verifiable response…";
-    try{
-      // This endpoint must return JSON and allow CORS for verified success to be shown.
-      const url=SCRIPT_URL+"?"+new URLSearchParams({name,email,phone});
-      const response=await fetch(url,{method:"GET",mode:"cors",cache:"no-store"});
-      if(!response.ok)throw new Error("HTTP "+response.status);
-      const data=await response.json();
-      if(data && (data.success===true || data.status==="success")){
-        status.className="form-status ok";status.textContent="Server confirmed your request was saved.";e.target.reset();
-      }else{
-        status.className="form-status err";status.textContent="The server did not confirm saving. Please check the Apps Script response before retrying.";
-      }
-    }catch(err){
-      console.warn("Contact submission could not be verified:",err);
-      status.className="form-status err";status.textContent="Could not verify that your details were saved. The server may not support CORS/JSON; please contact the site owner before retrying.";
-    }finally{button.disabled=false;button.textContent="Send alert request";}
-  });
-  init3D();
-})();
-</script>
-
-<script>
-(() => {
-  "use strict";
-
-  // DEMO LOGIN — change these values before testing.
-  // Client-side passwords are NOT secure for a public website.
-  const LOGIN_NAME = "Saravanan";
-  const LOGIN_PASSWORD = "1234";
-
-  const style = document.createElement("style");
-  style.textContent = `
-    #ssLoginGate {
-      position:fixed; inset:0; z-index:99999;
-      display:flex; align-items:center; justify-content:center;
-      padding:22px; background:linear-gradient(145deg,#071b30,#075b43);
-      font-family:Inter,Arial,sans-serif;
-    }
-    #ssLoginGate .login-card {
-      width:100%; max-width:360px; padding:28px;
-      background:white; border-radius:22px;
-      box-shadow:0 24px 70px #0005;
-    }
-    #ssLoginGate h1 {margin:0 0 8px;font-size:28px;color:#064e32}
-    #ssLoginGate p {color:#586779;font-size:13px;line-height:1.5}
-    #ssLoginGate label {display:block;margin-top:15px;font-size:12px;font-weight:700}
-    #ssLoginGate input {
-      display:block;width:100%;height:46px;margin-top:6px;
-      padding:0 12px;border:1px solid #cbd5e1;border-radius:10px;
-      font:inherit;box-sizing:border-box;
-    }
-    #ssLoginGate button,#ssGpsButton {
-      min-height:44px;padding:10px 14px;border-radius:10px;
-      background:#00652c;color:white;font-weight:700;
-    }
-    #ssLoginGate button {width:100%;margin-top:20px}
-    #ssLoginError {color:#b42318;min-height:18px;font-size:12px;margin-top:10px}
-    #ssGpsButton {position:absolute;left:12px;top:55px;z-index:8;
-      box-shadow:0 3px 10px #0002;font-size:11px}
-    #ssGpsInfo {
-      position:absolute;left:12px;right:60px;top:108px;z-index:8;
-      padding:8px;background:#fff;border-radius:9px;
-      font-size:10px;line-height:1.5;overflow-wrap:anywhere;
-      box-shadow:0 2px 8px #0002;display:none;
-    }
-    #ssGpsMarker {
-      position:absolute;left:50%;top:50%;z-index:7;
-      transform:translate(-50%,-50%);display:none;
-      text-align:center;pointer-events:none;
-    }
-    #ssGpsMarker .ssGpsDot {
-      width:20px;height:20px;background:#1769ff;border:4px solid white;
-      border-radius:50%;box-shadow:0 0 0 8px #1769ff30;margin:auto;
-    }
-    #ssGpsMarker span {
-      display:block;margin-top:8px;background:white;padding:5px 8px;
-      border-radius:7px;font-size:10px;font-weight:700;white-space:nowrap;
-    }
-  `;
-  document.head.appendChild(style);
-
-  const app = document.querySelector(".app");
-  if (!app) return;
-  app.style.visibility = "hidden";
-
-  const gate = document.createElement("div");
-  gate.id = "ssLoginGate";
-  gate.innerHTML = `
-    <form class="login-card" id="ssLoginForm">
-      <h1>SS View 🚌</h1>
-      <p>Welcome! Login to open the bus demo.</p>
-      <label for="ssLoginName">Your name</label>
-      <input id="ssLoginName" autocomplete="username"
-        placeholder="Enter your name" required>
-      <label for="ssLoginPassword">Password</label>
-      <input id="ssLoginPassword" type="password"
-        autocomplete="current-password" placeholder="Enter password" required>
-      <button type="submit">Login & Open Map</button>
-      <div id="ssLoginError" role="alert"></div>
-      <p>Demo login only. Do not use a real or reused password here.</p>
-    </form>
-  `;
-  document.body.appendChild(gate);
-
-  function openApp() {
-    gate.remove();
-    app.style.visibility = "visible";
-    const avatar = document.querySelector(".avatar");
-    if (avatar) {
-      avatar.textContent = "S";
-      avatar.title = "Logged in: " + LOGIN_NAME;
-    }
-  }
-
-  // Keep the demo session only for this browser tab.
-  document.querySelector("#ssLoginForm").addEventListener("submit", e => {
-    e.preventDefault();
-    const name = document.querySelector("#ssLoginName").value.trim();
-    const password = document.querySelector("#ssLoginPassword").value;
-    if (name.toLowerCase() === LOGIN_NAME.toLowerCase() &&
-        password === LOGIN_PASSWORD) {
-      openApp();
-    } else {
-      document.querySelector("#ssLoginError").textContent =
-        "Name or password is incorrect. Try again.";
-    }
-  });
-
-  // Add a GPS button to the existing illustrative map.
-  const map = document.querySelector("#map");
-  if (!map) return;
-
-  const gpsButton = document.createElement("button");
-  gpsButton.id = "ssGpsButton";
-  gpsButton.type = "button";
-  gpsButton.textContent = "◎ Find My Location";
-  gpsButton.setAttribute("aria-label", "Find my GPS location");
-  map.appendChild(gpsButton);
-
-  const gpsInfo = document.createElement("div");
-  gpsInfo.id = "ssGpsInfo";
-  gpsInfo.setAttribute("role", "status");
-  map.appendChild(gpsInfo);
-
-  const marker = document.createElement("div");
-  marker.id = "ssGpsMarker";
-  marker.innerHTML =
-    '<div class="ssGpsDot"></div><span>Your GPS · Not to scale</span>';
-  map.appendChild(marker);
-
-  gpsButton.addEventListener("click", () => {
-    if (!navigator.geolocation) {
-      gpsInfo.style.display = "block";
-      gpsInfo.textContent = "This browser does not support GPS location.";
-      return;
-    }
-
-    gpsButton.disabled = true;
-    gpsButton.textContent = "Finding location…";
-    gpsInfo.style.display = "block";
-    gpsInfo.textContent =
-      "Allow location access in your browser when prompted.";
-
-    navigator.geolocation.getCurrentPosition(
-      position => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-
-        gpsInfo.innerHTML = "";
-        const title = document.createElement("strong");
-        title.textContent = "Your GPS location";
-        const coords = document.createElement("div");
-        coords.textContent =
-          "Latitude: " + lat.toFixed(6) +
-          " · Longitude: " + lon.toFixed(6);
-        const link = document.createElement("a");
-        link.href = "https://www.google.com/maps?q=" +
-          encodeURIComponent(lat + "," + lon);
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.textContent = "Open your location in Google Maps";
-        link.style.display = "inline-block";
-        link.style.marginTop = "5px";
-
-        gpsInfo.append(title, coords, link);
-        marker.style.display = "block";
-        gpsButton.textContent = "✓ Location found";
-        gpsButton.disabled = false;
-
-        const status = document.querySelector("#mapStatus");
-        if (status) status.textContent = "GPS permission granted";
-      },
-      error => {
-        const messages = {
-          1: "Location permission denied. Allow it in browser settings.",
-          2: "Your location is currently unavailable. Try again outdoors.",
-          3: "GPS request timed out. Please try again."
-        };
-        gpsInfo.textContent =
-          messages[error.code] || "Could not get your location.";
-        gpsButton.textContent = "◎ Try GPS again";
-        gpsButton.disabled = false;
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
     );
-  });
-
-  // This example app's background is a demo scene, not a real street map.
-  // The marker is therefore illustrative; Google Maps opens the real coordinates.
-})();
-</script>
+  </script>
 </body>
 </html>
-
+```
