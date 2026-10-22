@@ -193,6 +193,130 @@
       }
     );
   </script>
+  
+<!-- Bus Tracker Map - add before </body> -->
+<section id="bus-map-section" style="padding:20px;background:#f8fafc;color:#0f172a;border-radius:14px;margin:16px 0;font-family:Arial,sans-serif">
+  <h2>Chennai &amp; Thiruvallur Bus Tracker</h2>
+  <p id="bus-map-status">Map loading...</p>
+
+  <label for="bus-city">Select area:</label>
+  <select id="bus-city" style="padding:10px;margin:8px;border-radius:8px">
+    <option value="chennai">Chennai</option>
+    <option value="thiruvallur">Thiruvallur</option>
+  </select>
+
+  <button id="bus-my-location" type="button"
+    style="padding:10px;border:0;border-radius:8px;background:#0f766e;color:white">
+    Find My Location
+  </button>
+
+  <div id="bus-map-v2"
+    style="height:430px;width:100%;margin-top:16px;border-radius:12px">
+  </div>
+
+  <p style="font-size:13px;color:#475569">
+    Map data © OpenStreetMap contributors.
+    Bus GPS feed is not connected yet.
+  </p>
+</section>
+
+<link rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  crossorigin=""/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  crossorigin=""></script>
+
+<script>
+(function () {
+  const status = document.getElementById("bus-map-status");
+  const citySelect = document.getElementById("bus-city");
+  const locationButton = document.getElementById("bus-my-location");
+
+  if (!status || !citySelect || !locationButton) return;
+
+  if (typeof L === "undefined") {
+    status.textContent = "Map library load aagala. Page refresh panni paarunga.";
+    return;
+  }
+
+  const map = L.map("bus-map-v2").setView([13.0827, 80.2707], 10);
+
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(map);
+
+  const areas = {
+    chennai: {
+      center: [13.0827, 80.2707],
+      zoom: 11,
+      name: "Chennai"
+    },
+    thiruvallur: {
+      center: [13.1439, 79.9089],
+      zoom: 10,
+      name: "Thiruvallur"
+    }
+  };
+
+  let areaMarker = null;
+  let myLocationMarker = null;
+
+  function showArea() {
+    const area = areas[citySelect.value] || areas.chennai;
+    map.setView(area.center, area.zoom);
+
+    if (areaMarker) map.removeLayer(areaMarker);
+
+    areaMarker = L.marker(area.center)
+      .addTo(map)
+      .bindPopup(area.name + " area centre");
+
+    status.textContent =
+      area.name + " map ready. Real bus GPS data is not connected.";
+  }
+
+  citySelect.addEventListener("change", showArea);
+
+  locationButton.addEventListener("click", function () {
+    if (!navigator.geolocation) {
+      status.textContent = "Indha browser GPS location support pannala.";
+      return;
+    }
+
+    status.textContent = "Location permission request pannudhu...";
+
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        const point = [
+          position.coords.latitude,
+          position.coords.longitude
+        ];
+
+        if (myLocationMarker) map.removeLayer(myLocationMarker);
+
+        myLocationMarker = L.marker(point)
+          .addTo(map)
+          .bindPopup("Your current location");
+
+        map.setView(point, 15);
+        myLocationMarker.openPopup();
+        status.textContent =
+          "Your location found. This is not a bus location.";
+      },
+      function () {
+        status.textContent =
+          "Location access kidaikkala. Browser permission check pannunga.";
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+
+  showArea();
+  setTimeout(function () { map.invalidateSize(); }, 300);
+})();
+</script>
 </body>
 </html>
 ```
