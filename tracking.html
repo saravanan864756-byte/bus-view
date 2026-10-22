@@ -1,0 +1,198 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bus View | Chennai & Thiruvallur</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: #f0fdf4;
+      background: #052e16;
+    }
+
+    header {
+      padding: 22px 16px;
+      background: #14532d;
+      text-align: center;
+    }
+
+    h1 { margin: 0 0 8px; }
+    p { line-height: 1.6; }
+
+    main {
+      max-width: 700px;
+      margin: auto;
+      padding: 20px 14px;
+    }
+
+    .panel {
+      margin: 16px 0;
+      padding: 20px;
+      border: 1px solid #286444;
+      border-radius: 16px;
+      background: #0b3b22;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    select, input, button, .link-button {
+      width: 100%;
+      padding: 13px;
+      margin: 7px 0;
+      border: 0;
+      border-radius: 9px;
+      font-size: 16px;
+    }
+
+    select, input {
+      color: #10251a;
+      background: white;
+    }
+
+    button, .link-button {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      font-weight: bold;
+      color: #052e16;
+      background: #86efac;
+      cursor: pointer;
+    }
+
+    .secondary {
+      color: white;
+      background: #166534;
+      border: 1px solid #4ade80;
+    }
+
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      background: #123d27;
+      color: #bbf7d0;
+    }
+
+    small { color: #bbf7d0; }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>🚌 BUS VIEW</h1>
+    <p>Chennai & Thiruvallur Bus Tracker</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>📍 Find Your Bus</h2>
+
+      <label for="area">Select area</label>
+      <select id="area">
+        <option value="chennai">Chennai — MTC</option>
+        <option value="thiruvallur">Thiruvallur</option>
+      </select>
+
+      <label for="busNumber">Bus number / route</label>
+      <input id="busNumber"
+             placeholder="Enter bus number, e.g. 570">
+
+      <button id="trackButton">Find Live Tracking</button>
+
+      <p id="status" class="status" aria-live="polite">
+        Select your area and enter a bus number.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>🗺️ Official Tracking</h2>
+      <p>
+        Open the official MTC tracker to check the live-tracking
+        options currently provided by the transport operator.
+      </p>
+
+      <a class="link-button"
+         href="https://commuter.mtcbusits.in/"
+         target="_blank" rel="noopener noreferrer">
+        Open MTC Live Tracker ↗
+      </a>
+
+      <a class="link-button secondary"
+         href="https://mtcbus.tn.gov.in/Home"
+         target="_blank" rel="noopener noreferrer">
+        MTC Official Website ↗
+      </a>
+    </section>
+
+    <section class="panel">
+      <h2>📚 Route & Schedule Data</h2>
+      <p>
+        CUMTA publishes Chennai transport route and stop datasets.
+        These are useful for building route search, but do not
+        themselves provide a live location for every bus.
+      </p>
+
+      <a class="link-button secondary"
+         href="https://opendata.cumta.org/"
+         target="_blank" rel="noopener noreferrer">
+        Open Chennai Transit Data ↗
+      </a>
+
+      <a class="link-button secondary"
+         href="https://www.tnstc.in/OTRSOnline/preKnowYourConductor.do"
+         target="_blank" rel="noopener noreferrer">
+        TNSTC Bus Details ↗
+      </a>
+    </section>
+
+    <p><small>
+      Live bus positions will appear inside Bus View only after
+      an authorized GPS data feed has been connected. This page
+      does not generate fake bus locations.
+    </small></p>
+
+    <button class="secondary"
+            onclick="location.href='index.html'">
+      ← Back to Bus View
+    </button>
+  </main>
+
+  <script>
+    document.getElementById("trackButton").addEventListener(
+      "click", function () {
+        const area = document.getElementById("area").value;
+        const bus = document.getElementById("busNumber")
+          .value.trim();
+        const status = document.getElementById("status");
+
+        if (!bus) {
+          status.textContent = "Please enter a bus number first.";
+          return;
+        }
+
+        if (area === "chennai") {
+          status.textContent =
+            "For bus " + bus +
+            ", check the official MTC tracker. Bus View is not yet " +
+            "connected to the operator's live GPS feed.";
+        } else {
+          status.textContent =
+            "For bus " + bus +
+            ", Thiruvallur live GPS data is not connected yet. " +
+            "We need an authorized operator feed to show its real location.";
+        }
+      }
+    );
+  </script>
+</body>
+</html>
+```
